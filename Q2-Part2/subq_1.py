@@ -1,42 +1,41 @@
 from __future__ import print_function
-
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.sql import SparkSession
 import sys
-
 from pyspark.ml.linalg import Vector
 from pyspark.ml.feature import VectorAssembler
 
 if __name__ == "__main__":
-    spark = SparkSession\
-        .builder\
-        .appName("NBA_KMeans")\
-        .getOrCreate()
-    
-    #load OG data, get list of players
-    df=spark.read\
-        .format("csv")\
-        .option("inferSchema","true")\
-        .option("header","true")\
-        .load(sys.argv[1])
-    player_list=list(df.toPandas()['player_name'].unique())
+  spark = SparkSession\
+    .builder\
+    .appName("NBAKMeans")\
+    .getOrCreate()
 
-    #kmeans for each player
-    for player in player_list:
-      print(player, end=': ')
-      new_df=df.filter(f"player_name == '{player}'")
-      input_cols=['SHOT_CLOCK', 'SHOT_DIST', 'CLOSE_DEF_DIST']
-      vec_assembler=VectorAssembler(inputCols=input_cols, outputCol="zones", handleInvalid = "skip")
-      final_df=vec_assembler.transform(new_df)
+  #df = spark.read.csv('/content/spark-test/shot_logs.csv', inferSchema=True, header=True)
+  df=spark.read\
+    .format("csv")\
+    .option("inferSchema","true")\
+    .option("header","true")\
+    .load('/content/spark-test/shot_logs.csv') #*****changing this line to sys.argv[1]
 
-      kmeans = KMeans(featuresCol='zones').setK(4).setSeed(1)
-      model = kmeans.fit(final_df)
-      predictions = model.transform(final_df)
+  #experiment
+  player_list=list(df.toPandas()['player_name'].unique())
 
-      centers = model.clusterCenters()
-      for center in centers:
-          print(center, end=' ')
-      print('\n')
+  for player in player_list:
+    print(player, end=': ')
+    new_df=df.filter(f"player_name == '{player}'")
+    input_cols=['SHOT_CLOCK', 'SHOT_DIST', 'CLOSE_DEF_DIST',]
+    vec_assembler=VectorAssembler(inputCols=input_cols, outputCol="zones", handleInvalid = "skip")
+    final_df=vec_assembler.transform(new_df)
 
-    spark.stop()
+    kmeans = KMeans(featuresCol='zones').setK(4).setSeed(1)
+    model = kmeans.fit(final_df)
+    predictions = model.transform(final_df)
+
+    centers = model.clusterCenters()
+    for center in centers:
+        print(center, end=' ')
+    print('\n')
+
+  spark.stop()
