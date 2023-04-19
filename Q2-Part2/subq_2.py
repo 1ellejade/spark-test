@@ -2,14 +2,12 @@ from __future__ import print_function
 
 import sys
 import math
-
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from pyspark.sql.types import StringType, MapType
 
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
-
 from pyspark.ml.linalg import Vector
 from pyspark.ml.feature import VectorAssembler
 
@@ -24,19 +22,19 @@ if __name__ == "__main__":
     .format("csv")\
     .option("inferSchema","true")\
     .option("header","true")\
-    .load('/content/spark-test/shot_logs.csv')
+    .load(sys.argv[1])
 
   players_wanted=['james harden', 'chris paul', 'stephen curry', 'lebron james']
 
   for player in players_wanted:                            
-    df.filter(f"player_name == '{player}'")#.show()
+    df.filter(f"player_name == '{player}'")
 
     print(player, end=': ')
     new_df=df.filter(f"player_name == '{player}'")
     input_cols=['SHOT_CLOCK', 'SHOT_DIST', 'CLOSE_DEF_DIST',]
     vec_assembler=VectorAssembler(inputCols=input_cols, outputCol="zones", handleInvalid = "skip")
     final_df=vec_assembler.transform(new_df)
-    final_df#.show()
+    final_df
 
     kmeans = KMeans(featuresCol='zones').setK(4).setSeed(1)
     model = kmeans.fit(final_df)
@@ -45,7 +43,7 @@ if __name__ == "__main__":
     centers = model.clusterCenters()
 
     df2=final_df.rdd.map(lambda x: ((0 if x['SHOT_RESULT']=='missed' else 1), x['zones'])).toDF(['SHOT_RESULT', 'zones'])
-    #df2.show()
+    
 
     centers_list=[]       
     shot_list=[0,0,0,0] #to put numbers to the assigned zones
