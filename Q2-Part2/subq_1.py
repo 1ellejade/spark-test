@@ -12,14 +12,12 @@ if __name__ == "__main__":
     .appName("NBAKMeans")\
     .getOrCreate()
 
-  #df = spark.read.csv('/content/spark-test/shot_logs.csv', inferSchema=True, header=True)
   df=spark.read\
     .format("csv")\
     .option("inferSchema","true")\
     .option("header","true")\
-    .load('/content/spark-test/shot_logs.csv') #*****changing this line to sys.argv[1]
+    .load(sys.argv[1]) 
 
-  #experiment
   player_list=list(df.toPandas()['player_name'].unique())
 
   for player in player_list:
